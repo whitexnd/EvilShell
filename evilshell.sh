@@ -108,7 +108,7 @@ function xterm(){
 }
 
 function help(){
-	banner
+	banner; sleep 0.4
 	echo -e "\n$blue[*]$end Usage: $red$0 -i <ip_addres> -p <port>$end"
 	echo -e "\n$yellow[!]$end You can specify the shell that you want whit: $red-s <shell>$end"
 	echo -e "\n\t$purple[+]$end Example: $purple$0 -i 127.0.0.1 -p 443 -s bash$end"
