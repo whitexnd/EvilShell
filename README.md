@@ -1,6 +1,6 @@
 # EvilShell
 
->EvilShell its a bash script reverse shell generator
+>EvilShell its a bash script that simplifies the creation of reverse shells
 
 ![image](https://user-images.githubusercontent.com/103772333/203641445-20a1003f-c497-46f9-95b6-72c1f8b4521e.png)
 
