@@ -16,6 +16,11 @@
 `You can specify the ip with -i and the port with -p
 also you can select the shell with -s parameter`
 
+> If u want to encode the payload u can use
+
+`-p <encoder>`
+Current encoders are b64 (base64) and url
+
 ## Optional
 
 I suggest you to add it into your $PATH with the following commands:
@@ -24,10 +29,8 @@ I suggest you to add it into your $PATH with the following commands:
 - `sudo mv evilshell.sh /bin/evilshell`
 
 Then u can use it like this:
-- `evilshell -i <ip> -p <port>`
+- `evilshell -s python`
 
-## Example of Usage
-https://user-images.githubusercontent.com/103772333/203640309-01f6993b-9adf-4093-b058-93f2b9a77686.mp4
 
 
 
