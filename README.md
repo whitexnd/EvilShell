@@ -9,6 +9,13 @@
 
 `git clone https://github.com/whitexnd/EvilShell`
 
+## Usage
+
+> By default takes the ip from the iface tun0 and the port 443
+
+`You can specify the ip with -i and the port with -p
+also you can select the shell with -s parameter`
+
 ## Optional
 
 I suggest you to add it into your $PATH with the following commands:
