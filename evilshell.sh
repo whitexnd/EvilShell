@@ -27,24 +27,25 @@ function banner(){
 ___________       .__ .__     _________.__             .__   .__   
 \_   _____/___  __|__||  |   /   _____/|  |__    ____  |  |  |  |  
  |    __)_ \  \/ /|  ||  |   \_____  \ |  |  \ _/ __ \ |  |  |  |  
- |        \ \   / |  ||  |__ /        \|   Y  \\\  ___/ |  |__|  |__	Made by WhiteXnd
+ |        \ \   / |  ||  |__ /        \|   Y  \\\  ___/ |  |__|  |__   Made by WhiteXnd
 /_______  /  \_/  |__||____//_______  /|___|  / \___  >|____/|____/
         \/                          \/      \/      \/
 " | lolcat -S '80'
 }
 
 function tools(){
-	tools=(xclip lolcat ifconfig)
+	tools=(xclip lolcat ifconfig urlencode)
 	for tool in ${tools[@]}; do
 	        command=$tool
 		case $command in
         	        ifconfig) tool="net-tools";;
+			urlencode) tool="gridsite-clients";;
 	        esac
 		instalada=$(which $command > /dev/null; echo $?)
 		if [ $instalada == 0 ]; then
 			continue
 	        elif [ $instalada == 1 ]; then
-			echo -e "$yellow[!]$end Missing package: $tool"
+			echo -e "$yellow[!]$end Missing $command package: $tool"
                         sudo apt install $tool -y > /dev/null 2>&1
                         sleep 0.2
 		fi
@@ -61,9 +62,17 @@ function tools(){
 }
 
 function copy(){
-	echo $1 | xclip -sel clip && echo -e "\t\n$yellow[!]$end Shell copied on clipboard:"
-	echo -e "$purple$1$end\n"
-	if [ $# -eq 2 ]; then
+	if [ "$encode" ];then
+        	case $encode in
+			b64) shell=$(echo $1 | base64 -w 0);;
+			url) shell=$(urlencode -m $1);;
+	        esac
+	else
+		shell=$1
+	fi
+	echo $shell | xclip -sel clip && echo -e "\t\n$yellow[!]$end Shell copied on clipboard:"
+	echo -e "$purple$shell$end\n"
+	if [ $# -eq 2 ] && [ "$verbose" ]; then
 		echo -e "$turquoise$2$end"
 	fi
 }
@@ -112,10 +121,13 @@ function xterm(){
 }
 
 function help(){
-	banner; sleep 0.4
+	banner
 	echo -e "$blue[*]$end By default takes the ip from tun0 if its founded and the 443 port"
+	echo -e "$yellow[!]$end Current encoders:$purple b64 url$end"
 	echo -e "$yellow[!]$end You can specify:$yellow Ip ->$end $purple-i <ip>$end |$yellow Port ->$end $purple-p <port>$end |$yellow Shell ->$end $purple-s <shell>$end"
-	echo -e "\n\t$purple[+]$end Example: $purple$0 -i 127.0.0.1 -p 443 -s bash$end"
+	echo -e "\t\t    $yellow Verbose ->$end $purple-v$end |$yellow Encoder ->$end$purple -e <encoder>$end |$yellow Help ->$end$purple -h$end"
+ 	echo -e "\n\t$purple[+]$end Example: $purple$0 -i 10.10.0.123 -p 443 -s bash$end"
+ 	echo -e "\t$purple[+]$end Example: $purple$0 -s python -e b64$end"
 	exit 0
 }
 
@@ -144,42 +156,56 @@ function selection(){
 	read x
 }
 
+function checks(){
+
+	# Check that everything is installed
+	tools
+
+	# Extract IP from IFACE tun0
+	if [ -z "$ip" ];then
+		IFCONFIG=$(which ifconfig)
+		IFACE=$($IFCONFIG | grep tun0 | awk '{print $1}' | tr -d ':')
+		if [ "$IFACE" = "tun0" ];then
+			ip=$($IFCONFIG tun0 | grep "inet " | awk '{print $2}')
+		fi
+	fi
+
+	# Set a Default Port
+	if [ -z "$port" ];then
+		port="443"
+	fi
+
+	# Print help menu
+	if [ -z "$ip" ] || [ -z "$port" ];then
+		help
+	fi
+
+}
+
 
 ####### MAIN EXECUTION ######
 
-while getopts i:p:s:h opt; do
+while getopts i:p:s:e:hv opt; do
         case $opt in
                 i) ip=$OPTARG ;;
                 p) port=$OPTARG ;;
 		s) x=$OPTARG ;;
+		e) encode=$OPTARG;;
 		h) help ;;
         esac
 done
 
 
-# Check that everything is installed
-tools
-
-# Extract IP from IFACE tun0
-if [ -z "$ip" ];then
-	IFCONFIG=$(which ifconfig)
-	IFACE=$($IFCONFIG | grep tun0 | awk '{print $1}' | tr -d ':')
-	if [ "$IFACE" = "tun0" ];then
-		ip=$($IFCONFIG tun0 | grep "inet" | awk '{print $2}')
-	fi
-fi
-
-# Default Port
-if [ -z "$port" ];then
-	port="443"
-fi
-
-if [ -z "$ip" ] || [ -z "$port" ];then
-	help
-fi
+# Some cheks
+checks
 
 # Banner
-banner; sleep 0.4
+banner
+
+# Cheks if verbose is true
+if [[ $* == *"-v"* ]];then
+	verbose="1"
+fi
 
 # Checks if a shell was specified if not prints a menu
 if [ -z "$x" ]; then
