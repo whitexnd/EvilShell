@@ -34,20 +34,24 @@ ___________       .__ .__     _________.__             .__   .__
 }
 
 function tools(){
-	tools=(xclip lolcat)
+	tools=(xclip lolcat ifconfig)
 	for tool in ${tools[@]}; do
-		instalada=$(which $tool > /dev/null; echo $?)
+	        command=$tool
+		case $command in
+        	        ifconfig) tool="net-tools";;
+	        esac
+		instalada=$(which $command > /dev/null; echo $?)
 		if [ $instalada == 0 ]; then
 			continue
 	        elif [ $instalada == 1 ]; then
-			echo -e "$yellow[!]$end Missing tool: $tool"
+			echo -e "$yellow[!]$end Missing package: $tool"
                         sudo apt install $tool -y > /dev/null 2>&1
                         sleep 0.2
 		fi
 
-		instalada=$(which $tool > /dev/null;  echo $?)
+		instalada=$(which $command > /dev/null;  echo $?)
 		if [ $instalada == 0 ]; then
-			echo -e "$purple[*]$end Tool: $tool installed successfully"; sleep 2.3
+			echo -e "$purple[*]$end Package: $tool installed successfully"; sleep 2.3
 		else
 			echo -e "$yellow[!]$end Instalation for $tool failed, try to install it manually using: "
 			echo -e "\tsudo apt install $red$tool$end"
@@ -109,8 +113,8 @@ function xterm(){
 
 function help(){
 	banner; sleep 0.4
-	echo -e "\n$blue[*]$end Usage: $red$0 -i <ip_addres> -p <port>$end"
-	echo -e "\n$yellow[!]$end You can specify the shell that you want whit: $red-s <shell>$end"
+	echo -e "$blue[*]$end By default takes the ip from tun0 if its founded and the 443 port"
+	echo -e "$yellow[!]$end You can specify:$yellow Ip ->$end $purple-i <ip>$end |$yellow Port ->$end $purple-p <port>$end |$yellow Shell ->$end $purple-s <shell>$end"
 	echo -e "\n\t$purple[+]$end Example: $purple$0 -i 127.0.0.1 -p 443 -s bash$end"
 	exit 0
 }
@@ -153,18 +157,35 @@ while getopts i:p:s:h opt; do
 done
 
 
+# Check that everything is installed
+tools
 
+# Extract IP from IFACE tun0
+if [ -z "$ip" ];then
+	IFCONFIG=$(which ifconfig)
+	IFACE=$($IFCONFIG | grep tun0 | awk '{print $1}' | tr -d ':')
+	if [ "$IFACE" = "tun0" ];then
+		ip=$($IFCONFIG tun0 | grep "inet" | awk '{print $2}')
+	fi
+fi
+
+# Default Port
+if [ -z "$port" ];then
+	port="443"
+fi
 
 if [ -z "$ip" ] || [ -z "$port" ];then
 	help
 fi
 
-tools
+# Banner
 banner; sleep 0.4
 
+# Checks if a shell was specified if not prints a menu
 if [ -z "$x" ]; then
 	selection
 fi
 
+# Select the shell that you want
 choose
 
