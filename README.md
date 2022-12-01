@@ -2,7 +2,7 @@
 
 >EvilShell its a bash script that simplifies the creation of reverse shells
 
-![image](https://user-images.githubusercontent.com/103772333/203641445-20a1003f-c497-46f9-95b6-72c1f8b4521e.png)
+![image](https://user-images.githubusercontent.com/103772333/205136655-51710b32-be2a-452b-a05d-13bad06f146a.png)
 
 ## Instalation
 
