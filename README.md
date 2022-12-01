@@ -18,7 +18,7 @@ also you can select the shell with -s parameter`
 
 > If u want to encode the payload u can use
 
-`-p <encoder>`
+`-e <encoder>`
 Current encoders are b64 (base64) and url
 
 ## Optional
