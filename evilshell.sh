@@ -83,14 +83,13 @@ function copy() {
     shell="$1"
   fi
 
-  # Print the resoult and copy it into the clipboard
-  local message="\t\n$yellow[!]$end Shell copied on clipboard:\n$purple$shell$end\n"
-  echo -e "$message"
+  # Print the result and copy it into the clipboard
+  echo -e "$yellow[!]$end Shell copied on clipboard:\n$purple$shell$end"
   echo -n "$shell" | xclip -sel clip
 
-  # Shows more info if -v was specified
+  # Shows more info if -v was specified  
   if [ $# -eq 2 ] && [ "$verbose" ]; then
-    echo -e "$turquoise$2$end"
+    echo -e "\n$turquoise$2$end"
   fi
 }
 
