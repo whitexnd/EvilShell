@@ -178,7 +178,7 @@ function checks(){
 	tools
 
 	# Print help menu
-	if [[ -z "$IP" ]] || [[ -z "$port" ]];then
+	if [[ -z "$IP" ]];then
 		help
 	fi
 }
