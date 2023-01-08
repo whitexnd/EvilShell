@@ -170,7 +170,7 @@ function selection(){
         done
         echo -e "\t$yellow!) Exit$end\n"
 	echo -en "$purple[+]$end Input: "
-	read x
+	read s
 }
 
 function checks(){
